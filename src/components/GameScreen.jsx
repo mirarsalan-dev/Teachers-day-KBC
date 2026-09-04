@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
-import { Phone, Users, DivideCircle, CheckCircle, XCircle } from 'lucide-react';
+import { Phone, Users, DivideCircle, CheckCircle, XCircle, Share2, Copy } from 'lucide-react';
 import { playSuspense, playCorrect, playWrong, playLock, playNewQuestion, play7Crore } from '../utils/audioControls';
+import Peer from 'peerjs';
 
 const GameScreen = ({ questions }) => {
   const [currentQIndex, setCurrentQIndex] = useState(0);
@@ -16,9 +17,23 @@ const GameScreen = ({ questions }) => {
   const [usedAudience, setUsedAudience] = useState(false);
   const [modalContent, setModalContent] = useState(null); // For phone/audience results
 
+  // Screen Sharing State
+  const [shareLink, setShareLink] = useState(null);
+  const [isSharing, setIsSharing] = useState(false);
+  const peerRef = useRef(null);
+  const localStreamRef = useRef(null);
+
   const stopSuspense = useRef(null);
 
   const currentQ = questions[currentQIndex];
+
+  // Cleanup peer on unmount
+  useEffect(() => {
+    return () => {
+      if (peerRef.current) peerRef.current.destroy();
+      if (localStreamRef.current) localStreamRef.current.getTracks().forEach(track => track.stop());
+    };
+  }, []);
 
   useEffect(() => {
     // Play new question sound
@@ -217,6 +232,57 @@ const GameScreen = ({ questions }) => {
     return classes;
   };
 
+  const handleShareScreen = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getDisplayMedia({
+        video: true,
+        audio: true
+      });
+      
+      localStreamRef.current = stream;
+      setIsSharing(true);
+      
+      // Initialize peer
+      const peer = new Peer();
+      peerRef.current = peer;
+      
+      peer.on('open', (id) => {
+        setShareLink(`${window.location.origin}/?watch=${id}`);
+      });
+      
+      // When a viewer calls us, we answer with our stream
+      peer.on('call', (call) => {
+        call.answer(localStreamRef.current);
+      });
+
+      // Handle stream stop from browser UI
+      stream.getVideoTracks()[0].onended = () => {
+        stopSharing();
+      };
+    } catch (err) {
+      console.error("Error sharing screen: ", err);
+      alert("Could not start screen sharing. Ensure you grant permissions.");
+    }
+  };
+
+  const stopSharing = () => {
+    if (localStreamRef.current) {
+      localStreamRef.current.getTracks().forEach(track => track.stop());
+    }
+    if (peerRef.current) {
+      peerRef.current.destroy();
+    }
+    setIsSharing(false);
+    setShareLink(null);
+  };
+
+  const copyShareLink = () => {
+    if (shareLink) {
+      navigator.clipboard.writeText(shareLink);
+      alert("Link copied to clipboard! Share it with your viewers.");
+    }
+  };
+
   if (gameState === 'finished') {
     return (
       <div className="game-screen">
@@ -236,6 +302,25 @@ const GameScreen = ({ questions }) => {
 
   return (
     <div className="game-screen">
+      {/* Screen Sharing Controls */}
+      <div style={{ position: 'absolute', top: '20px', right: '20px', display: 'flex', gap: '10px', alignItems: 'center', zIndex: 100 }}>
+        {shareLink ? (
+          <>
+            <span style={{ color: '#ff4444', fontWeight: 'bold', fontSize: '1rem', textShadow: '0 0 5px rgba(255, 0, 0, 0.5)' }}>● LIVE</span>
+            <button onClick={copyShareLink} className="lifeline-btn" title="Copy Link" style={{ width: 'auto', padding: '0 15px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <Copy size={20} /> <span style={{ fontSize: '0.9rem' }}>Copy Link</span>
+            </button>
+            <button onClick={stopSharing} className="lifeline-btn" title="Stop Sharing" style={{ background: '#ff4444', color: 'white' }}>
+              <XCircle size={20} />
+            </button>
+          </>
+        ) : (
+          <button onClick={handleShareScreen} className="lifeline-btn" title="Share Game Live" style={{ width: 'auto', padding: '0 15px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <Share2 size={20} /> <span style={{ fontSize: '0.9rem' }}>Share Live</span>
+          </button>
+        )}
+      </div>
+
       <div className="game-header">
         <div className="question-counter">
           Question {currentQIndex + 1} of {questions.length}
