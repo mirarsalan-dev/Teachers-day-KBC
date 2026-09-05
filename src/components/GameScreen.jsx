@@ -303,7 +303,7 @@ const GameScreen = ({ questions }) => {
   return (
     <div className="game-screen">
       {/* Screen Sharing Controls */}
-      <div style={{ position: 'absolute', top: '20px', right: '20px', display: 'flex', gap: '10px', alignItems: 'center', zIndex: 100 }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', alignItems: 'center', marginBottom: '15px', zIndex: 100 }}>
         {shareLink ? (
           <>
             <span style={{ color: '#ff4444', fontWeight: 'bold', fontSize: '1rem', textShadow: '0 0 5px rgba(255, 0, 0, 0.5)' }}>● LIVE</span>
