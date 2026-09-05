@@ -41,23 +41,11 @@ function App() {
         audio: true
       });
       
-      // Mix internal game audio and potential system audio
-      const dest = audioCtx.createMediaStreamDestination();
-      
-      // Connect system audio from screen share (if available)
-      if (displayStream.getAudioTracks().length > 0) {
-        const displaySource = audioCtx.createMediaStreamSource(displayStream);
-        displaySource.connect(dest);
-      }
-      
-      // gameAudioStream is already routed internally to capture all app sounds
-      const gameSource = audioCtx.createMediaStreamSource(gameAudioStream.stream);
-      gameSource.connect(dest);
-      
       // Create final stream with video and mixed audio
+      // We directly take the gameAudioStream track which contains all our routed game sounds.
       const mixedStream = new MediaStream([
         ...displayStream.getVideoTracks(),
-        ...dest.stream.getAudioTracks()
+        ...gameAudioStream.stream.getAudioTracks()
       ]);
       
       localStreamRef.current = mixedStream;
