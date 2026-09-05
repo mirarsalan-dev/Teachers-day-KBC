@@ -5,7 +5,6 @@ import UploadScreen from './components/UploadScreen';
 import IntroScreen from './components/IntroScreen';
 import GameScreen from './components/GameScreen';
 import ViewerScreen from './components/ViewerScreen';
-import { gameAudioStream, audioCtx } from './utils/audioControls';
 
 function App() {
   const [questions, setQuestions] = useState([]);
@@ -32,23 +31,19 @@ function App() {
 
   const handleShareScreen = async () => {
     try {
-      if (audioCtx.state === 'suspended') {
-        await audioCtx.resume();
-      }
+      alert("🔊 IMPORTANT FOR AUDIO: When the popup appears, you MUST select 'Chrome Tab' and check the 'Share tab audio' toggle at the bottom! Otherwise, viewers will not hear anything.");
 
       const displayStream = await navigator.mediaDevices.getDisplayMedia({
         video: true,
         audio: true
       });
       
-      // Create final stream with video and mixed audio
-      // We directly take the gameAudioStream track which contains all our routed game sounds.
-      const mixedStream = new MediaStream([
-        ...displayStream.getVideoTracks(),
-        ...gameAudioStream.stream.getAudioTracks()
-      ]);
+      // If the user didn't share audio, warn them
+      if (displayStream.getAudioTracks().length === 0) {
+        alert("⚠️ WARNING: You didn't share audio! Viewers will only see the screen without sound. Stop sharing and try again if you want sound.");
+      }
       
-      localStreamRef.current = mixedStream;
+      localStreamRef.current = displayStream;
       
       const peer = new Peer();
       peerRef.current = peer;
