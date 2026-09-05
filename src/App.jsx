@@ -34,8 +34,11 @@ function App() {
       alert("🔊 IMPORTANT FOR AUDIO: When the popup appears, you MUST select 'Chrome Tab' and check the 'Share tab audio' toggle at the bottom! Otherwise, viewers will not hear anything.");
 
       const displayStream = await navigator.mediaDevices.getDisplayMedia({
-        video: true,
-        audio: true
+        video: {
+          displaySurface: "browser",
+        },
+        audio: true,
+        preferCurrentTab: true
       });
       
       // If the user didn't share audio, warn them
