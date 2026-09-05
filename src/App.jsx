@@ -32,6 +32,10 @@ function App() {
 
   const handleShareScreen = async () => {
     try {
+      if (audioCtx.state === 'suspended') {
+        await audioCtx.resume();
+      }
+
       const displayStream = await navigator.mediaDevices.getDisplayMedia({
         video: true,
         audio: true

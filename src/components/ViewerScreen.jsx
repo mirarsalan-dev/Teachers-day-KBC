@@ -55,6 +55,10 @@ const ViewerScreen = ({ hostId }) => {
     call.on('stream', (hostStream) => {
       if (videoRef.current) {
         videoRef.current.srcObject = hostStream;
+        videoRef.current.muted = false;
+        videoRef.current.volume = 1.0;
+        
+        console.log("Stream received. Video tracks:", hostStream.getVideoTracks().length, "Audio tracks:", hostStream.getAudioTracks().length);
         
         videoRef.current.onloadedmetadata = () => {
           videoRef.current.play().then(() => {
