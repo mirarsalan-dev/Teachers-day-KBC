@@ -5,6 +5,7 @@ import UploadScreen from './components/UploadScreen';
 import IntroScreen from './components/IntroScreen';
 import GameScreen from './components/GameScreen';
 import ViewerScreen from './components/ViewerScreen';
+import { gameAudioStream, audioCtx } from './utils/audioControls';
 
 function App() {
   const [questions, setQuestions] = useState([]);
@@ -31,12 +32,31 @@ function App() {
 
   const handleShareScreen = async () => {
     try {
-      const stream = await navigator.mediaDevices.getDisplayMedia({
+      const displayStream = await navigator.mediaDevices.getDisplayMedia({
         video: true,
         audio: true
       });
       
-      localStreamRef.current = stream;
+      // Mix internal game audio and potential system audio
+      const dest = audioCtx.createMediaStreamDestination();
+      
+      // Connect system audio from screen share (if available)
+      if (displayStream.getAudioTracks().length > 0) {
+        const displaySource = audioCtx.createMediaStreamSource(displayStream);
+        displaySource.connect(dest);
+      }
+      
+      // gameAudioStream is already routed internally to capture all app sounds
+      const gameSource = audioCtx.createMediaStreamSource(gameAudioStream.stream);
+      gameSource.connect(dest);
+      
+      // Create final stream with video and mixed audio
+      const mixedStream = new MediaStream([
+        ...displayStream.getVideoTracks(),
+        ...dest.stream.getAudioTracks()
+      ]);
+      
+      localStreamRef.current = mixedStream;
       
       const peer = new Peer();
       peerRef.current = peer;
@@ -53,7 +73,7 @@ function App() {
         call.answer(localStreamRef.current);
       });
 
-      stream.getVideoTracks()[0].onended = () => {
+      displayStream.getVideoTracks()[0].onended = () => {
         stopSharing();
       };
     } catch (err) {

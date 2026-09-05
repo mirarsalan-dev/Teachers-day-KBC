@@ -1,4 +1,5 @@
-const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+export const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+export const gameAudioStream = audioCtx.createMediaStreamDestination();
 
 const playTone = (frequency, type, duration, vol = 0.1) => {
   const oscillator = audioCtx.createOscillator();
@@ -12,9 +13,26 @@ const playTone = (frequency, type, duration, vol = 0.1) => {
 
   oscillator.connect(gainNode);
   gainNode.connect(audioCtx.destination);
+  gainNode.connect(gameAudioStream); // Route to WebRTC stream
 
   oscillator.start();
   oscillator.stop(audioCtx.currentTime + duration);
+};
+
+// Helper to route HTML Audio elements
+const playRoutedAudio = (src, onended = () => {}) => {
+  const audio = new Audio(src);
+  
+  // We must wait for the audio to be playable to avoid cross-origin or context issues, 
+  // but for local files it's fine.
+  audio.crossOrigin = "anonymous";
+  const source = audioCtx.createMediaElementSource(audio);
+  
+  source.connect(audioCtx.destination);
+  source.connect(gameAudioStream); // Route to WebRTC stream
+  
+  audio.onended = onended;
+  return audio;
 };
 
 // Returns a function to stop the suspense loop
@@ -38,8 +56,7 @@ export const playSuspense = () => {
 
 export const playCorrect = () => {
   return new Promise((resolve) => {
-    const audio = new Audio('/kbc-right-answer_AYv3mAo.mp3');
-    audio.onended = resolve;
+    const audio = playRoutedAudio('/kbc-right-answer_AYv3mAo.mp3', resolve);
     audio.play().catch(e => {
       console.error("Error playing correct answer sound:", e);
       setTimeout(resolve, 3000);
@@ -49,8 +66,7 @@ export const playCorrect = () => {
 
 export const playWrong = () => {
   return new Promise((resolve) => {
-    const audio = new Audio('/kbc-wrong-answer.mp3');
-    audio.onended = resolve;
+    const audio = playRoutedAudio('/kbc-wrong-answer.mp3', resolve);
     audio.play().catch(e => {
       console.error("Error playing wrong answer sound:", e);
       setTimeout(resolve, 3000);
@@ -60,8 +76,7 @@ export const playWrong = () => {
 
 export const playLock = () => {
   return new Promise((resolve) => {
-    const audio = new Audio('/kbc-answer-locked-in.mp3');
-    audio.onended = resolve;
+    const audio = playRoutedAudio('/kbc-answer-locked-in.mp3', resolve);
     audio.play().catch(e => {
       console.error("Error playing lock sound:", e);
       setTimeout(resolve, 2000); // fallback
@@ -70,14 +85,13 @@ export const playLock = () => {
 };
 
 export const playNewQuestion = () => {
-  const audio = new Audio('/kbc-question.mp3');
+  const audio = playRoutedAudio('/kbc-question.mp3');
   audio.play().catch(e => console.error("Error playing new question sound:", e));
 };
 
 export const play7Crore = () => {
   return new Promise((resolve) => {
-    const audio = new Audio('/7-crore-kbc.mp3');
-    audio.onended = resolve;
+    const audio = playRoutedAudio('/7-crore-kbc.mp3', resolve);
     audio.play().catch(e => {
       console.error("Error playing 7 crore sound:", e);
       setTimeout(resolve, 5000);
@@ -86,7 +100,7 @@ export const play7Crore = () => {
 };
 
 export const playIntro = () => {
-  const audio = new Audio('/kbc-intro-2.mp3');
+  const audio = playRoutedAudio('/kbc-intro-2.mp3');
   audio.play().catch(e => console.error("Error playing intro sound:", e));
   return audio;
 };
