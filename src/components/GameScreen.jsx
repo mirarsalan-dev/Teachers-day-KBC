@@ -8,7 +8,7 @@ const GameScreen = ({ questions }) => {
   const [selectedOption, setSelectedOption] = useState(null);
   const [gameState, setGameState] = useState('playing'); // playing, locked, correct, wrong, finished
   const [hiddenOptions, setHiddenOptions] = useState([]);
-  const [timeLeft, setTimeLeft] = useState(45);
+  const [timeLeft, setTimeLeft] = useState(60);
   
   // Lifelines
   const [used5050, setUsed5050] = useState(false);
@@ -54,7 +54,7 @@ const GameScreen = ({ questions }) => {
 
   // Reset timer on new question
   useEffect(() => {
-    setTimeLeft(45);
+    setTimeLeft(60);
   }, [currentQIndex]);
 
   // Play correct sound on congratulations screen
@@ -298,7 +298,7 @@ const GameScreen = ({ questions }) => {
             <circle 
               className="timer-circle-progress" 
               cx="50" cy="50" r="45" 
-              style={{ strokeDashoffset: 283 - (283 * timeLeft) / 45 }}
+              style={{ strokeDashoffset: 283 - (283 * timeLeft) / 60 }}
             />
           </svg>
           <div className="timer-text">{timeLeft}</div>
