@@ -7,7 +7,31 @@ const ViewerScreen = ({ hostId }) => {
   const [peerInstance, setPeerInstance] = useState(null);
   
   useEffect(() => {
-    const peer = new Peer();
+    const peerConfig = {
+      config: {
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:stun1.l.google.com:19302' },
+          {
+            urls: "turn:openrelay.metered.ca:80",
+            username: "openrelayproject",
+            credential: "openrelayproject"
+          },
+          {
+            urls: "turn:openrelay.metered.ca:443",
+            username: "openrelayproject",
+            credential: "openrelayproject"
+          },
+          {
+            urls: "turn:openrelay.metered.ca:443?transport=tcp",
+            username: "openrelayproject",
+            credential: "openrelayproject"
+          }
+        ]
+      }
+    };
+    
+    const peer = new Peer(peerConfig);
     
     peer.on('open', (id) => {
       setStatus('Ready to Join');
@@ -85,7 +109,7 @@ const ViewerScreen = ({ hostId }) => {
   };
 
   return (
-    <div style={{ backgroundColor: '#000', height: '100vh', width: '100vw', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+    <div style={{ position: 'fixed', top: 0, left: 0, zIndex: 9999, backgroundColor: '#000', height: '100vh', width: '100vw', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
       {status !== 'Live' && (
         <div style={{ position: 'absolute', color: 'var(--gold)', fontSize: '1.5rem', zIndex: 10, textAlign: 'center', padding: '20px' }}>
           <h2>Viewer Mode</h2>
@@ -121,6 +145,21 @@ const ViewerScreen = ({ hostId }) => {
         playsInline 
         muted={false} // Viewers want to hear the audio
         style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+        onDoubleClick={() => {
+          if (!document.fullscreenElement) {
+            if (videoRef.current.requestFullscreen) {
+              videoRef.current.requestFullscreen();
+            } else if (videoRef.current.webkitRequestFullscreen) {
+              videoRef.current.webkitRequestFullscreen();
+            }
+          } else {
+            if (document.exitFullscreen) {
+              document.exitFullscreen();
+            } else if (document.webkitExitFullscreen) {
+              document.webkitExitFullscreen();
+            }
+          }
+        }}
       />
     </div>
   );
